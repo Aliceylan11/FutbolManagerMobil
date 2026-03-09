@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FutbolManagerMobil.StatistikPage"
+             BackgroundColor="#121212"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="1.5*, 2.5*, 4.5*, 1.5*" Padding="15" RowSpacing="15">
+
+        <VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="2">
+            <Label Text="MAÇ SONA ERDİ" FontSize="18" TextColor="Gold" HorizontalOptions="Center" FontAttributes="Bold"/>
+            <Label Text="İSTATİSTİKLER" FontSize="12" TextColor="White" Opacity="0.7" HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <Frame Grid.Row="1" BackgroundColor="#1A1A1A" BorderColor="#333" CornerRadius="15" Padding="10">
+            <Grid ColumnDefinitions="*, 1.5*, *">
+                <Label Grid.Column="0" x:Name="lblEvAd" Text="GS" TextColor="Red" FontSize="16" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Column="1" x:Name="lblSkor" Text="2 - 1" TextColor="White" FontSize="40" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Column="2" x:Name="lblDepAd" Text="FB" TextColor="CadetBlue" FontSize="16" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Grid>
+        </Frame>
+
+        <Frame Grid.Row="2" BackgroundColor="#1A1A1A" BorderColor="#333" CornerRadius="15" Padding="15">
+            <Grid RowDefinitions="*, *, *" ColumnDefinitions="*, 1.5*, *" RowSpacing="15">
+
+                <Label Grid.Row="0" Grid.Column="0" x:Name="lblEvSut" Text="12" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="0" Grid.Column="1" Text="TOPLAM ŞUT" TextColor="Gray" FontSize="11" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="0" Grid.Column="2" x:Name="lblDepSut" Text="8" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+
+                <Label Grid.Row="1" Grid.Column="0" x:Name="lblEvPas" Text="85" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="1" Grid.Column="1" Text="PAS DENEMESİ" TextColor="Gray" FontSize="11" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="1" Grid.Column="2" x:Name="lblDepPas" Text="72" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+
+                <Label Grid.Row="2" Grid.Column="0" x:Name="lblEvTop" Text="%55" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="2" Grid.Column="1" Text="TOPLA OYNAMA" TextColor="Gray" FontSize="11" HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Label Grid.Row="2" Grid.Column="2" x:Name="lblDepTop" Text="%45" TextColor="White" FontSize="15" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Grid>
+        </Frame>
+
+        <Button Grid.Row="3" Text="YENİ MAÇ" Clicked="OnYeniMacClicked" 
+                BackgroundColor="DarkGreen" TextColor="White" FontAttributes="Bold" 
+                CornerRadius="15" FontSize="16" HeightRequest="50" VerticalOptions="Center"/>
+
+    </Grid>
+</ContentPage>

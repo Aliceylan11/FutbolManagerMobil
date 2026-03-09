@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:FutbolManagerMobil"
+             x:Class="FutbolManagerMobil.SelectionPage"
+             BackgroundColor="#121212"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="3*, 4*, 2*" Padding="20">
+
+        <VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="5">
+            <Label Text="FUTBOL MANAGER" FontSize="26" FontAttributes="Bold" 
+                   TextColor="Gold" HorizontalOptions="Center"/>
+            <Label Text="2D SIMULATOR" FontSize="16" TextColor="White" 
+                   Opacity="0.8" HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*, Auto, *" ColumnSpacing="10" VerticalOptions="Center">
+
+            <Frame Grid.Column="0" BackgroundColor="#1A1A1A" BorderColor="#333" Padding="10" CornerRadius="15">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="EV SAHİBİ" TextColor="Gold" FontAttributes="Bold" HorizontalOptions="Center" FontSize="12"/>
+                    <Picker x:Name="pckEvSahibi" Title="Takım Seç" TitleColor="Gray" TextColor="White" HorizontalOptions="Fill"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label Grid.Column="1" Text="VS" TextColor="Gray" FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+
+            <Frame Grid.Column="2" BackgroundColor="#1A1A1A" BorderColor="#333" Padding="10" CornerRadius="15">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="DEPLASMAN" TextColor="Cyan" FontAttributes="Bold" HorizontalOptions="Center" FontSize="12"/>
+                    <Picker x:Name="pckDeplasman" Title="Takım Seç" TitleColor="Gray" TextColor="White" HorizontalOptions="Fill"/>
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
+
+        <Button Grid.Row="2" x:Name="btnMacaBasla" Text="MAÇA BAŞLA" Clicked="OnMacaBaslaClicked"
+                BackgroundColor="DarkGreen" TextColor="White" FontAttributes="Bold"
+                HeightRequest="55" CornerRadius="15" FontSize="18" VerticalOptions="Center"/>
+
+    </Grid>
+</ContentPage>
