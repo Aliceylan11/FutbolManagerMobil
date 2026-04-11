@@ -1,41 +1,114 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
-using System.Linq; // LINQ kullanımı için gerekli
+using System.Linq;
 using Microsoft.Maui.Controls;
 
 namespace FutbolManagerMobil;
 
 public partial class SelectionPage : ContentPage
 {
-    // Sınıf seviyesinde tanımlı, her yerden erişilebilir liste
     List<Takim> tumTakimlar;
+
+    private readonly Dictionary<string, OyunMotoru.OyunModu> modHaritasi = new()
+    {
+        { "ğŸ† Klasik Mod",  OyunMotoru.OyunModu.Klasik  },
+        { "âš–ï¸ Dengeli Mod", OyunMotoru.OyunModu.Dengeli },
+        { "âš¡ Efsane Modu", OyunMotoru.OyunModu.Efsane  },
+    };
+
+    private readonly Dictionary<OyunMotoru.OyunModu, string> modAciklamalari = new()
+    {
+        { OyunMotoru.OyunModu.Klasik,   "Oyuncular gerÃ§ek gÃ¼Ã§leriyle oynuyor. GÃ¼Ã§lÃ¼ takÄ±mlar avantajlÄ±, zayÄ±f takÄ±mlar dezavantajlÄ±." },
+        { OyunMotoru.OyunModu.Dengeli,  "TÃ¼m Ã¶zellikler 75'e sabitlenir. Taktik ve hamle seÃ§imi her ÅŸeyi belirler." },
+        { OyunMotoru.OyunModu.Efsane,   "GÃ¼Ã§ler 75'e dengelenir; senin takÄ±mÄ±ndan rastgele 3 oyuncuya +5 boost!" },
+    };
+
+    private readonly Dictionary<string, OyunMotoru.MacTipi> tipHaritasi = new()
+    {
+        { "ğŸ† Kupa (Uzatma / PenaltÄ±)", OyunMotoru.MacTipi.Kupa },
+        { "ğŸ“‹ Lig (90 Dakika)",         OyunMotoru.MacTipi.Lig  },
+    };
+
+    private readonly Dictionary<OyunMotoru.MacTipi, string> tipAciklamalari = new()
+    {
+        { OyunMotoru.MacTipi.Kupa, "Beraberlikte 105' ve 120'ye uzatma, ardÄ±ndan seri penaltÄ± atÄ±ÅŸlarÄ±!" },
+        { OyunMotoru.MacTipi.Lig,  "MaÃ§ 90 dakikada biter, beraberlik geÃ§erlidir." },
+    };
 
     public SelectionPage()
     {
         InitializeComponent();
 
-        // Takımları veritabanından SADECE BURADA çekip ana listemize (tumTakimlar) atıyoruz
         tumTakimlar = Veritabani.TumTakimlariGetir();
-
-        // UI (Ekrana) Seçim kutularını (Picker) dolduruyoruz
         pckEvSahibi.ItemsSource = tumTakimlar.Select(t => t.Isim).ToList();
         pckDeplasman.ItemsSource = tumTakimlar.Select(t => t.Isim).ToList();
+        pckOyunModu.ItemsSource = modHaritasi.Keys.ToList();
+        pckMacTipi.ItemsSource = tipHaritasi.Keys.ToList();
     }
 
+    // --- VALÄ°DASYON ---
+    private void ValidasyonYap()
+    {
+        bool hazir =
+            pckEvSahibi.SelectedIndex != -1 &&
+            pckDeplasman.SelectedIndex != -1 &&
+            pckOyunModu.SelectedIndex != -1 &&
+            pckMacTipi.SelectedIndex != -1 &&
+            !string.IsNullOrWhiteSpace(entEvHoca.Text) &&
+            !string.IsNullOrWhiteSpace(entDepHoca.Text);
+
+        btnMacaBasla.IsEnabled = hazir;
+        btnMacaBasla.Opacity = hazir ? 1.0 : 0.5;
+    }
+
+    private void OnPickerChanged(object sender, EventArgs e) => ValidasyonYap();
+    private void OnEntryChanged(object sender, TextChangedEventArgs e) => ValidasyonYap();
+
+    private void OnModSecildi(object sender, EventArgs e)
+    {
+        if (pckOyunModu.SelectedIndex == -1) return;
+        var mod = modHaritasi[(string)pckOyunModu.SelectedItem];
+        lblModAciklama.Text = modAciklamalari[mod];
+        frmModAciklama.IsVisible = true;
+        ValidasyonYap();
+    }
+
+    private void OnTipSecildi(object sender, EventArgs e)
+    {
+        if (pckMacTipi.SelectedIndex == -1) return;
+        var tip = tipHaritasi[(string)pckMacTipi.SelectedItem];
+        lblTipAciklama.Text = tipAciklamalari[tip];
+        frmTipAciklama.IsVisible = true;
+        ValidasyonYap();
+    }
+
+    // --- MAÃ‡A BAÅLA ---
     private async void OnMacaBaslaClicked(object sender, EventArgs e)
     {
-        // Kullanıcı takım seçmeden basarsa uyar
         if (pckEvSahibi.SelectedIndex == -1 || pckDeplasman.SelectedIndex == -1)
-        {
-            await DisplayAlert("Hata", "Lütfen iki takımı da seçin!", "Tamam");
-            return;
-        }
+        { await DisplayAlert("Hata", "LÃ¼tfen iki takÄ±mÄ± da seÃ§in!", "Tamam"); return; }
 
-        // Seçilen Takım Nesnelerini, dolu olan "tumTakimlar" listesinden alıyoruz
+        if (string.IsNullOrWhiteSpace(entEvHoca.Text) || string.IsNullOrWhiteSpace(entDepHoca.Text))
+        { await DisplayAlert("Hata", "LÃ¼tfen her iki hoca adÄ±nÄ± da girin!", "Tamam"); return; }
+
+        if (pckOyunModu.SelectedIndex == -1)
+        { await DisplayAlert("Hata", "LÃ¼tfen bir oyun modu seÃ§in!", "Tamam"); return; }
+
+        if (pckMacTipi.SelectedIndex == -1)
+        { await DisplayAlert("Hata", "LÃ¼tfen bir maÃ§ tipi seÃ§in!", "Tamam"); return; }
+
         var secilenEv = tumTakimlar[pckEvSahibi.SelectedIndex];
         var secilenDep = tumTakimlar[pckDeplasman.SelectedIndex];
+        var secilenMod = modHaritasi[(string)pckOyunModu.SelectedItem];
+        var secilenTip = tipHaritasi[(string)pckMacTipi.SelectedItem];
 
-        // DİKKAT: MainPage'e bu bilgileri (ID ve İsim) sorunsuzca gönderiyoruz
-        await Navigation.PushAsync(new MainPage(secilenEv.TakimID, secilenEv.Isim, secilenDep.TakimID, secilenDep.Isim));
+        await Navigation.PushAsync(new MainPage(
+            secilenEv.TakimID, secilenEv.Isim,
+            secilenDep.TakimID, secilenDep.Isim,
+            entEvHoca.Text.Trim(),
+            entDepHoca.Text.Trim(),
+            secilenMod,
+            secilenTip
+        ));
     }
 }

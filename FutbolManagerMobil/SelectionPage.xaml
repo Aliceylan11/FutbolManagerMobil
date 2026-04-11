@@ -3,40 +3,98 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:FutbolManagerMobil"
              x:Class="FutbolManagerMobil.SelectionPage"
-             BackgroundColor="#121212"
+             BackgroundColor="#0D0D0D"
              NavigationPage.HasNavigationBar="False">
 
-    <Grid RowDefinitions="3*, 4*, 2*" Padding="20">
+    <ScrollView>
+        <Grid RowDefinitions="Auto, Auto, Auto, Auto" Padding="20,40,20,30" RowSpacing="18">
 
-        <VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="5">
-            <Label Text="FUTBOL MANAGER" FontSize="26" FontAttributes="Bold" 
-                   TextColor="Gold" HorizontalOptions="Center"/>
-            <Label Text="2D SIMULATOR" FontSize="16" TextColor="White" 
-                   Opacity="0.8" HorizontalOptions="Center"/>
-        </VerticalStackLayout>
+            <!-- BAŞLIK -->
+            <VerticalStackLayout Grid.Row="0" Spacing="4">
+                <Label Text="⚽ FUTBOL MANAGER" FontSize="28" FontAttributes="Bold"
+                       TextColor="Gold" HorizontalOptions="Center"/>
+                <Label Text="2D SIMULATOR" FontSize="13" TextColor="#AAAAAA" HorizontalOptions="Center"/>
+                <BoxView HeightRequest="1" Color="Gold" Opacity="0.3" Margin="40,8"/>
+            </VerticalStackLayout>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*, Auto, *" ColumnSpacing="10" VerticalOptions="Center">
+            <!-- TAKIM SEÇİMİ + HOCA İSİMLERİ -->
+            <Grid Grid.Row="1" ColumnDefinitions="*, Auto, *" ColumnSpacing="10">
 
-            <Frame Grid.Column="0" BackgroundColor="#1A1A1A" BorderColor="#333" Padding="10" CornerRadius="15">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="EV SAHİBİ" TextColor="Gold" FontAttributes="Bold" HorizontalOptions="Center" FontSize="12"/>
-                    <Picker x:Name="pckEvSahibi" Title="Takım Seç" TitleColor="Gray" TextColor="White" HorizontalOptions="Fill"/>
+                <Border Grid.Column="0" BackgroundColor="#1A1A1A" Padding="12"
+                        StrokeShape="RoundRectangle 15" Stroke="#2A5C2A">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="🏠 EV SAHİBİ" TextColor="Gold" FontAttributes="Bold"
+                               HorizontalOptions="Center" FontSize="11"/>
+                        <Picker x:Name="pckEvSahibi" Title="Takım Seç" TitleColor="#666666"
+                                TextColor="White" HorizontalOptions="Fill"
+                                SelectedIndexChanged="OnPickerChanged"/>
+                        <BoxView HeightRequest="1" Color="#333333"/>
+                        <Label Text="HOCA ADI" TextColor="#888888" FontSize="10"/>
+                        <Entry x:Name="entEvHoca" Placeholder="Hoca adını girin..."
+                               PlaceholderColor="#555555" TextColor="White"
+                               BackgroundColor="Transparent" TextChanged="OnEntryChanged"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Grid.Column="1" Text="VS" TextColor="#555555" FontSize="18"
+                       FontAttributes="Bold" VerticalOptions="Center" HorizontalOptions="Center"/>
+
+                <Border Grid.Column="2" BackgroundColor="#1A1A1A" Padding="12"
+                        StrokeShape="RoundRectangle 15" Stroke="#1A3A5C">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="✈️ DEPLASMAN" TextColor="Cyan" FontAttributes="Bold"
+                               HorizontalOptions="Center" FontSize="11"/>
+                        <Picker x:Name="pckDeplasman" Title="Takım Seç" TitleColor="#666666"
+                                TextColor="White" HorizontalOptions="Fill"
+                                SelectedIndexChanged="OnPickerChanged"/>
+                        <BoxView HeightRequest="1" Color="#333333"/>
+                        <Label Text="HOCA ADI" TextColor="#888888" FontSize="10"/>
+                        <Entry x:Name="entDepHoca" Placeholder="Hoca adını girin..."
+                               PlaceholderColor="#555555" TextColor="White"
+                               BackgroundColor="Transparent" TextChanged="OnEntryChanged"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- OYUN MODU + MAÇ TİPİ -->
+            <Border Grid.Row="2" BackgroundColor="#1A1A1A" Padding="16"
+                    StrokeShape="RoundRectangle 15" Stroke="#444444">
+                <VerticalStackLayout Spacing="14">
+
+                    <!-- Oyun Modu -->
+                    <Label Text="🎮 OYUN MODU" TextColor="Gold" FontAttributes="Bold" FontSize="13"/>
+                    <Picker x:Name="pckOyunModu" Title="Mod Seçin" TitleColor="#666666"
+                            TextColor="White" HorizontalOptions="Fill"
+                            SelectedIndexChanged="OnModSecildi"/>
+                    <Border x:Name="frmModAciklama" BackgroundColor="#252525" Padding="12"
+                            StrokeShape="RoundRectangle 10" Stroke="#333333" IsVisible="False">
+                        <Label x:Name="lblModAciklama" TextColor="#CCCCCC" FontSize="12"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+
+                    <BoxView HeightRequest="1" Color="#333333" Margin="0,4"/>
+
+                    <!-- Maç Tipi -->
+                    <Label Text="⏱️ MAÇ TİPİ" TextColor="Gold" FontAttributes="Bold" FontSize="13"/>
+                    <Picker x:Name="pckMacTipi" Title="Tip Seçin" TitleColor="#666666"
+                            TextColor="White" HorizontalOptions="Fill"
+                            SelectedIndexChanged="OnTipSecildi"/>
+                    <Border x:Name="frmTipAciklama" BackgroundColor="#252525" Padding="12"
+                            StrokeShape="RoundRectangle 10" Stroke="#333333" IsVisible="False">
+                        <Label x:Name="lblTipAciklama" TextColor="#CCCCCC" FontSize="12"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
-            <Label Grid.Column="1" Text="VS" TextColor="Gray" FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+            <!-- MAÇA BAŞLA -->
+            <Button Grid.Row="3" x:Name="btnMacaBasla" Text="⚽ MAÇA BAŞLA"
+                    Clicked="OnMacaBaslaClicked"
+                    BackgroundColor="#1E5D1E" TextColor="White" FontAttributes="Bold"
+                    HeightRequest="58" CornerRadius="15" FontSize="17"
+                    IsEnabled="False" Opacity="0.5" VerticalOptions="End"/>
 
-            <Frame Grid.Column="2" BackgroundColor="#1A1A1A" BorderColor="#333" Padding="10" CornerRadius="15">
-                <VerticalStackLayout Spacing="8">
-                    <Label Text="DEPLASMAN" TextColor="Cyan" FontAttributes="Bold" HorizontalOptions="Center" FontSize="12"/>
-                    <Picker x:Name="pckDeplasman" Title="Takım Seç" TitleColor="Gray" TextColor="White" HorizontalOptions="Fill"/>
-                </VerticalStackLayout>
-            </Frame>
         </Grid>
-
-        <Button Grid.Row="2" x:Name="btnMacaBasla" Text="MAÇA BAŞLA" Clicked="OnMacaBaslaClicked"
-                BackgroundColor="DarkGreen" TextColor="White" FontAttributes="Bold"
-                HeightRequest="55" CornerRadius="15" FontSize="18" VerticalOptions="Center"/>
-
-    </Grid>
+    </ScrollView>
 </ContentPage>
