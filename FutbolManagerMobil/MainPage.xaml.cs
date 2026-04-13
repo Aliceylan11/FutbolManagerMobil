@@ -15,7 +15,6 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 
         motor = new OyunMotoru();
-
         motor.evSahibi = Veritabani.TakimCek(evId, evAd);
         motor.deplasman = Veritabani.TakimCek(depId, depAd);
 
@@ -74,25 +73,27 @@ public partial class MainPage : ContentPage
         if (motor.SavunmaBekleniyorMu) motor.SavunmaHamlesiYap(btn.Text);
         else motor.HucumHamlesiBaslat(btn.Text);
 
-        // — MacDurumu Kontrolü —
+        // MacDurumu'na göre aksiyon al
         switch (motor.SonMacDurumu)
         {
             case OyunMotoru.MacDurumu.Uzatma1Basladi:
-                await DisplayAlert("⏱️ Uzatma!", "Maç 90'da bitti ama skor beraberdi!\n1. UZATMA BAŞLIYOR (90–105)", "Devam!");
-                lblDakika.Text = "91:00";
+                await DisplayAlert("⏱️ Uzatma!",
+                    "90 dakika bitti — beraberlik!\n1. UZATMA BAŞLIYOR (90–105)", "Devam!");
                 break;
 
             case OyunMotoru.MacDurumu.Uzatma2Basladi:
-                await DisplayAlert("⏱️ 2. Uzatma!", "1. uzatma da yetmedi!\n2. UZATMA BAŞLIYOR (105–120)", "Devam!");
-                lblDakika.Text = "106:00";
+                await DisplayAlert("⏱️ 2. Uzatma!",
+                    "105 dakika da yetmedi!\n2. UZATMA BAŞLIYOR (105–120)", "Devam!");
                 break;
 
             case OyunMotoru.MacDurumu.PenaltiBasladi:
-                // Penaltılar OyunMotoru içinde zaten hesaplandı ve spiker mesajları gönderildi
+                // Penaltı logu spiker ekranında zaten gösterildi (OyunMotoru bunu yaptı)
                 TumButonlariKapat();
-                await DisplayAlert("⚡ Seri Penaltı!",
-                    $"Kazanan: {motor.PenaltiKazanani}",
-                    "İstatistiklere Git");
+                sahaGrafik.Invalidate();
+                await DisplayAlert("⚡ Seri Penaltı Sonucu!",
+                    $"🏆 Kazanan: {motor.PenaltiKazanani}",
+                    "Devam");
+                // Kupa modunda istatistik sayfasına git (lig tablosu güncellenmez)
                 await IstatistiklereGit();
                 return;
 
@@ -110,13 +111,19 @@ public partial class MainPage : ContentPage
                         : "Beraberlik";
 
                 await DisplayAlert("Maç Bitti",
-                    $"Sonuç: {motor.evSahibiGol} - {motor.deplasmanGol}\n🏆 {kazanan}",
-                    "İstatistiklere Git");
-                await IstatistiklereGit();
+                    $"Sonuç: {motor.evSahibi.Isim} {motor.evSahibiGol} – {motor.deplasmanGol} {motor.deplasman.Isim}\n🏆 {kazanan}",
+                    "İlerle");
+
+                // Lig modunda → LeaguePage (sonuç kaydedilir)
+                // Kupa modunda → StatistikPage (sadece istatistikler)
+                if (motor.SecilenTip == OyunMotoru.MacTipi.Lig)
+                    await LigSayfasinaGit();
+                else
+                    await IstatistiklereGit();
                 return;
         }
 
-        // — Normal hamlede UI güncelle —
+        // Normal hamle UI güncellemesi
         lblSkor.Text = $"{motor.evSahibiGol} - {motor.deplasmanGol}";
         lblDakika.Text = $"{motor.dakika}:00";
 
@@ -126,7 +133,7 @@ public partial class MainPage : ContentPage
     }
 
     // =====================================================
-    //  YARDIMCI UI METODLARI
+    //  NAVİGASYON YARDIMCILARI
     // =====================================================
     private void TumButonlariKapat()
     {
@@ -134,6 +141,20 @@ public partial class MainPage : ContentPage
         btnPress.IsEnabled = btnTopaKay.IsEnabled = btnMarkaj.IsEnabled = false;
     }
 
+    /// <summary>
+    /// Lig modunda LeaguePage'e git — maç sonucu otomatik işlenir.
+    /// </summary>
+    private async Task LigSayfasinaGit()
+    {
+        await Navigation.PushAsync(new LeaguePage(
+            motor.evSahibi.Isim, motor.evSahibiGol,
+            motor.deplasman.Isim, motor.deplasmanGol
+        ));
+    }
+
+    /// <summary>
+    /// Kupa modunda veya penaltıdan sonra istatistik sayfasına git.
+    /// </summary>
     private async Task IstatistiklereGit()
     {
         await Navigation.PushAsync(new StatistikPage(
@@ -144,6 +165,9 @@ public partial class MainPage : ContentPage
         ));
     }
 
+    // =====================================================
+    //  SPİKER MESAJI
+    // =====================================================
     private void SpikerMesajEkle(string mesaj)
     {
         var yeniMesaj = new Label
@@ -159,6 +183,9 @@ public partial class MainPage : ContentPage
         scrSpiker.ScrollToAsync(0, 0, true);
     }
 
+    // =====================================================
+    //  BUTON YÖNETİMİ
+    // =====================================================
     private void ButonlariGuncelle()
     {
         Takim hucumTakimi = motor.topEvSahibindeMi ? motor.evSahibi : motor.deplasman;
@@ -195,42 +222,32 @@ public partial class MainPage : ContentPage
         switch (motor.topunYeri)
         {
             case OyunMotoru.SahaBolgesi.K:
-                btnKisaPas.Text = "Kısa Pas (Defans)";
-                btnAraPasi.Text = "Degaj (DOS)";
+                btnKisaPas.Text = "Kısa Pas (Defans)"; btnAraPasi.Text = "Degaj (DOS)";
                 btnKisaPas.IsVisible = btnKisaPas.IsEnabled = true;
                 btnAraPasi.IsVisible = btnAraPasi.IsEnabled = true;
                 break;
             case OyunMotoru.SahaBolgesi.D:
-                btnKisaPas.Text = "Kısa Pas (DOS)";
-                btnAraPasi.Text = "İleri Pas (MOS)";
-                btnSutCek.Text = "Geri Pas (Kaleci)";
+                btnKisaPas.Text = "Kısa Pas (DOS)"; btnAraPasi.Text = "İleri Pas (MOS)"; btnSutCek.Text = "Geri Pas (Kaleci)";
                 btnKisaPas.IsVisible = btnAraPasi.IsVisible = btnSutCek.IsVisible = true;
                 btnKisaPas.IsEnabled = btnAraPasi.IsEnabled = btnSutCek.IsEnabled = true;
                 break;
             case OyunMotoru.SahaBolgesi.DOS:
-                btnKisaPas.Text = "Geri Pas (Defans)";
-                btnAraPasi.Text = "Kısa Pas (OOS)";
-                btnSutCek.Text = "Çalım At";
+                btnKisaPas.Text = "Geri Pas (Defans)"; btnAraPasi.Text = "Kısa Pas (OOS)"; btnSutCek.Text = "Çalım At";
                 btnKisaPas.IsVisible = btnAraPasi.IsVisible = btnSutCek.IsVisible = true;
                 btnKisaPas.IsEnabled = btnAraPasi.IsEnabled = btnSutCek.IsEnabled = true;
                 break;
             case OyunMotoru.SahaBolgesi.MOS:
-                btnKisaPas.Text = "Dikine Pas (OOS)";
-                btnAraPasi.Text = "Kısa Pas (DOS)";
+                btnKisaPas.Text = "Dikine Pas (OOS)"; btnAraPasi.Text = "Kısa Pas (DOS)";
                 btnKisaPas.IsVisible = btnAraPasi.IsVisible = btnSutCek.IsVisible = true;
                 btnKisaPas.IsEnabled = btnAraPasi.IsEnabled = btnSutCek.IsEnabled = true;
                 break;
             case OyunMotoru.SahaBolgesi.OOS:
-                btnKisaPas.Text = "Geri Pas (MOS)";
-                btnAraPasi.Text = "Ara Pası (Forvet)";
-                btnSutCek.Text = "Şut Çek";
+                btnKisaPas.Text = "Geri Pas (MOS)"; btnAraPasi.Text = "Ara Pası (Forvet)"; btnSutCek.Text = "Şut Çek";
                 btnKisaPas.IsVisible = btnAraPasi.IsVisible = btnSutCek.IsVisible = true;
                 btnKisaPas.IsEnabled = btnAraPasi.IsEnabled = btnSutCek.IsEnabled = true;
                 break;
             case OyunMotoru.SahaBolgesi.F:
-                btnKisaPas.Text = "Ara Pası (OOS)";
-                btnAraPasi.Text = "Çalım At";
-                btnSutCek.Text = "GOL VURUŞU";
+                btnKisaPas.Text = "Ara Pası (OOS)"; btnAraPasi.Text = "Çalım At"; btnSutCek.Text = "GOL VURUŞU";
                 btnKisaPas.IsVisible = btnAraPasi.IsVisible = btnSutCek.IsVisible = true;
                 btnKisaPas.IsEnabled = btnAraPasi.IsEnabled = btnSutCek.IsEnabled = true;
                 break;

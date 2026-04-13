@@ -11,12 +11,7 @@ namespace FutbolManagerMobil
         // =====================================================
         public enum SahaBolgesi { K, D, DOS, MOS, OOS, F, K2 }
 
-        public enum OyunModu
-        {
-            Klasik,
-            Dengeli,
-            Efsane
-        }
+        public enum OyunModu { Klasik, Dengeli, Efsane }
 
         public enum MacTipi
         {
@@ -54,6 +49,9 @@ namespace FutbolManagerMobil
 
         public int UzatmaAsamasi { get; private set; } = 0;
         public string PenaltiKazanani { get; private set; } = "";
+
+        // Penaltı detay logu — MainPage spiker ekranında gösterir
+        public List<string> PenaltiLog { get; private set; } = new List<string>();
 
         public List<string> EfsaneBoostAldilar { get; private set; } = new List<string>();
 
@@ -98,7 +96,7 @@ namespace FutbolManagerMobil
             bool beraberlik = evSahibiGol == deplasmanGol;
             bool kupaModu = SecilenTip == MacTipi.Kupa;
 
-            // Normal süre sonu 90
+            // — Normal süre sonu 90 —
             if (dakika >= 90 && UzatmaAsamasi == 0)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
@@ -112,7 +110,7 @@ namespace FutbolManagerMobil
                 return MacDurumu.Bitti;
             }
 
-            // 1. Uzatma sonu 105
+            // — 1. Uzatma sonu 105 —
             if (dakika >= 105 && UzatmaAsamasi == 1)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
@@ -126,7 +124,7 @@ namespace FutbolManagerMobil
                 return MacDurumu.Bitti;
             }
 
-            // 2. Uzatma sonu 120
+            // — 2. Uzatma sonu 120 —
             if (dakika >= 120 && UzatmaAsamasi == 2)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
@@ -144,42 +142,77 @@ namespace FutbolManagerMobil
         }
 
         // =====================================================
-        //  SERİ PENALTI
+        //  GELİŞMİŞ SERİ PENALTI
+        //  • 6 oyuncu sırayla atar (K, D, DOS, MOS, OOS, F)
+        //  • 5 turda beraberlik → ani ölüm (+1 bozulana kadar)
         // =====================================================
         public void SeriPenaltilaraGec()
         {
+            PenaltiLog.Clear();
             SpikerMesajYayinla?.Invoke("⚡ SERİ PENALTI ATIŞLARI BAŞLADI! ⚡");
 
-            Random rnd = new Random();
+            // Atış sırası: Kaleci dahil tüm 6 oyuncu
+            var evAticilar = OyuncuSirasi(evSahibi);
+            var depAticilar = OyuncuSirasi(deplasman);
+
+            Kaleci evKaleci = evSahibi.Kaleci;
+            Kaleci depKaleci = deplasman.Kaleci;
+
             int evGol = 0;
             int depGol = 0;
-            int tur = 0;
-
-            Futbolcu evAtic = evSahibi.Forvet ?? (Futbolcu)evSahibi.OOS;
-            Futbolcu depAtic = deplasman.Forvet ?? (Futbolcu)deplasman.OOS;
-            Kaleci evKal = evSahibi.Kaleci;
-            Kaleci depKal = deplasman.Kaleci;
+            int tur = 0;     // Tamamlanan tur sayısı (her tur = her iki takım atar)
+            const int MIN_TUR = 5;
 
             while (true)
             {
-                tur++;
+                // Atıcı indeksi: ilk 5 turda 0–4, sonrasında round-robin
+                int aticiIdx = tur < MIN_TUR ? tur : tur % 6;
 
-                bool evAttı = !depKal.PenaltiKurtar(evAtic);
-                bool depAttı = !evKal.PenaltiKurtar(depAtic);
+                var evAtic = evAticilar[aticiIdx % evAticilar.Count];
+                var depAtic = depAticilar[aticiIdx % depAticilar.Count];
+
+                bool evAttı = !depKaleci.PenaltiKurtar(evAtic);
+                bool depAttı = !evKaleci.PenaltiKurtar(depAtic);
+
                 if (evAttı) evGol++;
                 if (depAttı) depGol++;
 
-                SpikerMesajYayinla?.Invoke(
-                    $"  Tur {tur}: {evSahibi.Isim} {evGol} – {depGol} {deplasman.Isim}");
+                tur++;
 
-                // En az 5 tur, sonra biri önde çıkınca bitir (sudden death mantığı dahil)
-                if (tur >= 5 && evGol != depGol) break;
+                string turLog = $"  Tur {tur}: {evSahibi.Isim} {evGol}-{depGol} {deplasman.Isim}" +
+                                $"  ({evAtic.isim} {(evAttı ? "✅" : "❌")} | " +
+                                $"{depAtic.isim} {(depAttı ? "✅" : "❌")})";
+                PenaltiLog.Add(turLog);
+                SpikerMesajYayinla?.Invoke(turLog);
+
+                // En az 5 tur atıldıktan sonra biri önde çıkınca bitir
+                if (tur >= MIN_TUR && evGol != depGol)
+                    break;
+
+                // Ani ölüm mesajı (sadece bir kez)
+                if (tur == MIN_TUR && evGol == depGol)
+                    SpikerMesajYayinla?.Invoke("⚠️ 5 turda eşitlik! ANİ ÖLÜM kuralı başladı...");
             }
 
             string kazanan = evGol > depGol ? evSahibi.Isim : deplasman.Isim;
             PenaltiKazanani = kazanan;
             SpikerMesajYayinla?.Invoke(
                 $"🏆 PENALTI KAZANANI: {kazanan}! ({evGol}-{depGol})");
+        }
+
+        /// <summary>
+        /// 6 oyuncuyu K→D→DOS→MOS→OOS→F sırasıyla döndürür.
+        /// </summary>
+        private static List<Futbolcu> OyuncuSirasi(Takim t)
+        {
+            var liste = new List<Futbolcu>();
+            if (t.Kaleci != null) liste.Add(t.Kaleci);
+            if (t.Defans != null) liste.Add(t.Defans);
+            if (t.DOS != null) liste.Add(t.DOS);
+            if (t.MOS != null) liste.Add(t.MOS);
+            if (t.OOS != null) liste.Add(t.OOS);
+            if (t.Forvet != null) liste.Add(t.Forvet);
+            return liste;
         }
 
         // =====================================================
@@ -205,9 +238,9 @@ namespace FutbolManagerMobil
 
         private const int DENGE_DEGERI = 75;
 
-        private static void DengelemeUygula(Takim takim)
+        private static void DengelemeUygula(Takim t)
         {
-            foreach (var o in TakimOyunculari(takim)) DengeleFutbolcu(o);
+            foreach (var o in TakimOyunculari(t)) DengeleFutbolcu(o);
         }
 
         private static void DengeleFutbolcu(Futbolcu f)
@@ -217,10 +250,10 @@ namespace FutbolManagerMobil
             f.Bitiricilik = f.Topcalma = f.Atak = f.Def = f.Kalecilik = DENGE_DEGERI;
         }
 
-        private void EfsaneBoostUygula(Takim takim)
+        private void EfsaneBoostUygula(Takim t)
         {
             const int BOOST = 5;
-            var secilenler = TakimOyunculari(takim)
+            var secilenler = TakimOyunculari(t)
                 .OrderBy(_ => new Random().Next()).Take(3).ToList();
             foreach (var o in secilenler)
             {
@@ -230,14 +263,14 @@ namespace FutbolManagerMobil
             }
         }
 
-        public static IEnumerable<Futbolcu> TakimOyunculari(Takim takim)
+        public static IEnumerable<Futbolcu> TakimOyunculari(Takim t)
         {
-            if (takim.Kaleci != null) yield return takim.Kaleci;
-            if (takim.Defans != null) yield return takim.Defans;
-            if (takim.DOS != null) yield return takim.DOS;
-            if (takim.MOS != null) yield return takim.MOS;
-            if (takim.OOS != null) yield return takim.OOS;
-            if (takim.Forvet != null) yield return takim.Forvet;
+            if (t.Kaleci != null) yield return t.Kaleci;
+            if (t.Defans != null) yield return t.Defans;
+            if (t.DOS != null) yield return t.DOS;
+            if (t.MOS != null) yield return t.MOS;
+            if (t.OOS != null) yield return t.OOS;
+            if (t.Forvet != null) yield return t.Forvet;
         }
 
         // =====================================================
