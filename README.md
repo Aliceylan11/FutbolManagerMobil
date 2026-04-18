@@ -47,13 +47,4 @@ Uygulama, dünya futbolunun en önemli takımlarını kapsamaktadır:
 2.  `Resources/Raw/teams.json` dosyasının **Build Action** özelliğinin `MauiAsset` olduğundan emin olun.
 3.  Visual Studio 2022 (v17.12+) ile projeyi açın ve `.NET 9` SDK ile çalıştırın.
 4.  Kadroları güncellemek isterseniz `Python/teams.py` scriptini çalıştırarak yeni JSON dosyasını oluşturabilirsiniz.
-
-## 📈 Gelişim Vizyonu
-Bu çalışma, masaüstü (WinForms) mantığından modern çapraz platform (cross-platform) mimariye geçişin bir başarısıdır. Yazılım kariyerimdeki bu yolculuk; kullanıcı arayüzü adaptasyonu, asenkron veri yönetimi ve otomasyon sistemlerinin bir mobil uygulamada nasıl harmanlandığının bir kanıtıdır.
-
----
-*Bu proje, Gümüşhane Üniversitesi Bilgisayar Programcılığı bünyesinde geliştirilen akademik bir çalışmanın profesyonel sürümüdür.*
-
----
-
-Ali, bu README'yi pushladığında projen artık bir "ödev" değil, gerçek bir "portfolyo ürünü" gibi ışıldayacak. GitHub'a pushladıktan sonra her şey tamam demektir. Eline, emeğine sağlık başkan! ⚽🚀🏆🦾
+ 
