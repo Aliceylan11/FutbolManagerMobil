@@ -3,9 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="FutbolManagerMobil.LeaguePage"
              BackgroundColor="#0D0D0D"
+             NavigationPage.HasNavigationBar="False"
              Title="Puan Durumu">
 
-    <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="16,20,16,16" RowSpacing="12">
+    <!-- Ana ScrollView: Tablo + Fikstür tek sayfada -->
+    <Grid RowDefinitions="Auto, Auto, Auto, Auto, Auto" Padding="16,20,16,16" RowSpacing="10">
 
         <!-- BAŞLIK -->
         <VerticalStackLayout Grid.Row="0" Spacing="4">
@@ -18,41 +20,44 @@
         <Border Grid.Row="1" BackgroundColor="#1A1A1A"
                 StrokeShape="RoundRectangle 10" Stroke="#333333" Padding="10,8">
             <Grid ColumnDefinitions="3*, *, *, *, *, *, *, *, 1.5*" ColumnSpacing="2">
-                <Label Grid.Column="0" Text="TAKIM"  TextColor="Gold" FontAttributes="Bold" FontSize="11"/>
-                <Label Grid.Column="1" Text="O"      TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="2" Text="G"      TextColor="#44FF44" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="3" Text="B"      TextColor="#FFAA00" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="4" Text="M"      TextColor="#FF4444" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="5" Text="AG"     TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="6" Text="YG"     TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="7" Text="AV"     TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
-                <Label Grid.Column="8" Text="P"      TextColor="Gold"    FontAttributes="Bold" FontSize="13" HorizontalOptions="Center"/>
+                <Label Grid.Column="0" Text="TAKIM" TextColor="Gold"    FontAttributes="Bold" FontSize="11"/>
+                <Label Grid.Column="1" Text="O"     TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="2" Text="G"     TextColor="#44FF44" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="3" Text="B"     TextColor="#FFAA00" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="4" Text="M"     TextColor="#FF4444" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="5" Text="AG"    TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="6" Text="YG"    TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="7" Text="AV"    TextColor="#AAAAAA" FontAttributes="Bold" FontSize="11" HorizontalOptions="Center"/>
+                <Label Grid.Column="8" Text="P"     TextColor="Gold"    FontAttributes="Bold" FontSize="13" HorizontalOptions="Center"/>
             </Grid>
         </Border>
 
         <!-- LİG TABLOSU (dinamik) -->
-        <ScrollView Grid.Row="2">
+        <ScrollView Grid.Row="2" MaximumHeightRequest="260">
             <VerticalStackLayout x:Name="slTablo" Spacing="4"/>
         </ScrollView>
 
+        <!-- OYNANAN MAÇLAR BAŞLIĞI -->
+        <VerticalStackLayout Grid.Row="3" Spacing="6" Margin="0,6,0,0">
+            <BoxView HeightRequest="1" Color="#333333"/>
+            <Label Text="📋 OYNANAN MAÇLAR" FontSize="15" FontAttributes="Bold"
+                   TextColor="Gold"/>
+            <!-- Fikstür listesi -->
+            <ScrollView MaximumHeightRequest="200">
+                <VerticalStackLayout x:Name="slFikstur" Spacing="6"/>
+            </ScrollView>
+        </VerticalStackLayout>
+
         <!-- BUTONLAR -->
-        <Grid Grid.Row="3" ColumnDefinitions="*, *" ColumnSpacing="10">
-            <Button Grid.Column="0"
-                    Text="🔄 Ligi Sıfırla"
+        <Grid Grid.Row="4" ColumnDefinitions="*, *" ColumnSpacing="10" Margin="0,6,0,0">
+            <Button Grid.Column="0" Text="🔄 Ligi Sıfırla"
                     Clicked="OnLigiSifirlaClicked"
-                    BackgroundColor="#5C1A1A"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    CornerRadius="12"
-                    HeightRequest="50"/>
-            <Button Grid.Column="1"
-                    Text="🏠 Ana Menüye Dön"
+                    BackgroundColor="#5C1A1A" TextColor="White"
+                    FontAttributes="Bold" CornerRadius="12" HeightRequest="50"/>
+            <Button Grid.Column="1" Text="🏠 Ana Menü"
                     Clicked="OnAnaMenuyeDonClicked"
-                    BackgroundColor="#1A3A5C"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    CornerRadius="12"
-                    HeightRequest="50"/>
+                    BackgroundColor="#1A3A5C" TextColor="White"
+                    FontAttributes="Bold" CornerRadius="12" HeightRequest="50"/>
         </Grid>
 
     </Grid>

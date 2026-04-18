@@ -10,14 +10,8 @@ namespace FutbolManagerMobil
         //  ENUM'LAR
         // =====================================================
         public enum SahaBolgesi { K, D, DOS, MOS, OOS, F, K2 }
-
         public enum OyunModu { Klasik, Dengeli, Efsane }
-
-        public enum MacTipi
-        {
-            Lig,   // 90 dk, beraberlik geçerli
-            Kupa   // 90 → 105 → 120 → Seri Penaltı
-        }
+        public enum MacTipi { Lig, Kupa }
 
         public enum MacDurumu
         {
@@ -31,8 +25,8 @@ namespace FutbolManagerMobil
         // =====================================================
         //  OYUN DEĞİŞKENLERİ
         // =====================================================
-        public Takim evSahibi { get; set; }
-        public Takim deplasman { get; set; }
+        public Takim evSahibi { get; set; } = new Takim();
+        public Takim deplasman { get; set; } = new Takim();
 
         public int evSahibiGol = 0;
         public int deplasmanGol = 0;
@@ -42,18 +36,21 @@ namespace FutbolManagerMobil
         public SahaBolgesi topunYeri = SahaBolgesi.MOS;
         public bool macBittiMi = false;
 
+        // Santra kontrolü — gol/başlangıç sonrası MOS'ta özel mod
+        public bool IsSantra { get; set; } = true;
+
         public string EvHocaAdi { get; set; } = "Hoca";
         public string DepHocaAdi { get; set; } = "Hoca";
         public OyunModu SecilenMod { get; set; } = OyunModu.Klasik;
         public MacTipi SecilenTip { get; set; } = MacTipi.Lig;
 
         public int UzatmaAsamasi { get; private set; } = 0;
-        public string PenaltiKazanani { get; private set; } = "";
 
-        // Penaltı detay logu — MainPage spiker ekranında gösterir
-        public List<string> PenaltiLog { get; private set; } = new List<string>();
-
-        public List<string> EfsaneBoostAldilar { get; private set; } = new List<string>();
+        // =====================================================
+        //  EFSANE BOOST — her iki takım için ayrı liste
+        // =====================================================
+        public List<string> EvEfsaneBoostlar { get; private set; } = new();
+        public List<string> DepEfsaneBoostlar { get; private set; } = new();
 
         // =====================================================
         //  DÜELLO SİSTEMİ
@@ -61,6 +58,19 @@ namespace FutbolManagerMobil
         public bool SavunmaBekleniyorMu { get; set; } = false;
         public string SonSecilenHucumHamlesi { get; set; } = "";
         public MacDurumu SonMacDurumu { get; private set; } = MacDurumu.Devam;
+
+        // =====================================================
+        //  İNTERAKTİF PENALTİ SİSTEMİ
+        // =====================================================
+        public bool PenaltiAsamasindaMi { get; private set; } = false;
+        public bool PenaltiEvSirasindaMi { get; private set; } = true;  // true=ev atar, false=dep atar
+        public int PenaltiEvGol { get; private set; } = 0;
+        public int PenaltiDepGol { get; private set; } = 0;
+        public int PenaltiTur { get; private set; } = 0;      // tamamlanan tur
+        public int PenaltiHamle { get; private set; } = 0;      // tur içi hamle (0=ev, 1=dep)
+        public bool PenaltiAniOlum { get; private set; } = false;
+        public string PenaltiKazanani { get; private set; } = "";
+        public string PenaltiSonMesaj { get; private set; } = "";
 
         // =====================================================
         //  KOORDİNATLAR
@@ -72,17 +82,18 @@ namespace FutbolManagerMobil
         // =====================================================
         //  EVENTLER
         // =====================================================
-        public Action<string> SpikerMesajYayinla;
-        public Action<bool> GolOlduEkranaBildir;
+        public Action<string>? SpikerMesajYayinla;
+        public Action<bool>? GolOlduEkranaBildir;
 
         // =====================================================
         //  DİNAMİK SÜRE
         // =====================================================
         private int HamleSuresiHesapla(string hamle)
         {
-            if (hamle.Contains("GOL VURUŞU") || hamle.Contains("Şut")) return 3;
-            if (hamle.Contains("Çalım") || hamle.Contains("Ara")) return 2;
-            return 1;
+            Random _r = new();
+            if (hamle.Contains("GOL VURUŞU") || hamle.Contains("Şut")) return _r.Next(4, 7);
+            if (hamle.Contains("Çalım") || hamle.Contains("Ara")) return _r.Next(3, 5);
+            return _r.Next(2, 4);
         }
 
         // =====================================================
@@ -90,51 +101,54 @@ namespace FutbolManagerMobil
         // =====================================================
         private MacDurumu MacBitisKontrol()
         {
-            bool topTehlikeliBolgede =
-                topunYeri == SahaBolgesi.OOS || topunYeri == SahaBolgesi.F;
+            bool topTehlikeliBolgede = topunYeri == SahaBolgesi.OOS || topunYeri == SahaBolgesi.F;
 
             bool beraberlik = evSahibiGol == deplasmanGol;
             bool kupaModu = SecilenTip == MacTipi.Kupa;
 
-            // — Normal süre sonu 90 —
+            // --- 90. Dakika Kontrolü ---
             if (dakika >= 90 && UzatmaAsamasi == 0)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
+
                 if (kupaModu && beraberlik)
                 {
                     UzatmaAsamasi = 1;
                     dakika = 91;
-                    SpikerMesajYayinla?.Invoke("90 dakika! Beraberlik var — UZATMAYA GİDİYORUZ!");
+                    SpikerMesajYayinla?.Invoke("90 dakika bitti! Kazanan çıkmadı, UZATMALARA GİDİYORUZ!");
                     return MacDurumu.Uzatma1Basladi;
                 }
                 return MacDurumu.Bitti;
             }
 
-            // — 1. Uzatma sonu 105 —
+            // --- 105. Dakika Kontrolü ---
             if (dakika >= 105 && UzatmaAsamasi == 1)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
-                if (beraberlik)
-                {
-                    UzatmaAsamasi = 2;
-                    dakika = 106;
-                    SpikerMesajYayinla?.Invoke("105 dakika! Yine beraberlik — 2. UZATMAYA!");
-                    return MacDurumu.Uzatma2Basladi;
-                }
-                return MacDurumu.Bitti;
+
+                // Uzatmalar iki devredir, skor ne olursa olsun 120'ye kadar oynanır.
+                UzatmaAsamasi = 2;
+                dakika = 106;
+                SpikerMesajYayinla?.Invoke("Uzatmanın ilk devresi bitti! heyecan devam ediyor.");
+                return MacDurumu.Uzatma2Basladi;
             }
 
-            // — 2. Uzatma sonu 120 —
+            // --- 120. Dakika Kontrolü ---
             if (dakika >= 120 && UzatmaAsamasi == 2)
             {
                 if (topTehlikeliBolgede) return MacDurumu.Devam;
+
                 if (beraberlik)
                 {
+                    // Eğer 120 sonunda hala beraberlik varsa penaltılar başlar 
                     UzatmaAsamasi = 3;
-                    macBittiMi = true;
-                    SeriPenaltilaraGec();
+                    // DİKKAT: macBittiMi = true; satırını buradan sildim. 
+                    // Çünkü penaltılar interaktif ise HamleYap metodunun başında takılırsın.
+                    PenaltiBaslat();
                     return MacDurumu.PenaltiBasladi;
                 }
+
+                // Beraberlik yoksa maç burada biter
                 return MacDurumu.Bitti;
             }
 
@@ -142,96 +156,153 @@ namespace FutbolManagerMobil
         }
 
         // =====================================================
-        //  GELİŞMİŞ SERİ PENALTI
-        //  • 6 oyuncu sırayla atar (K, D, DOS, MOS, OOS, F)
-        //  • 5 turda beraberlik → ani ölüm (+1 bozulana kadar)
+        //  İNTERAKTİF PENALTİ — BAŞLAT
         // =====================================================
-        public void SeriPenaltilaraGec()
+        public void PenaltiBaslat()
         {
-            PenaltiLog.Clear();
-            SpikerMesajYayinla?.Invoke("⚡ SERİ PENALTI ATIŞLARI BAŞLADI! ⚡");
+            PenaltiAsamasindaMi = true;
+            PenaltiEvSirasindaMi = true;   // Her turda önce ev sahibi atar
+            PenaltiEvGol = 0;
+            PenaltiDepGol = 0;
+            PenaltiTur = 0;
+            PenaltiHamle = 0;
+            PenaltiAniOlum = false;
+            SpikerMesajYayinla?.Invoke("⚡ SERİ PENALTİ ATIŞLARI BAŞLADI!");
+            SpikerMesajYayinla?.Invoke($"Tur 1 — {evSahibi.Isim} başlıyor. Yön seçin!");
+        }
 
-            // Atış sırası: Kaleci dahil tüm 6 oyuncu
-            var evAticilar = OyuncuSirasi(evSahibi);
-            var depAticilar = OyuncuSirasi(deplasman);
+        // =====================================================
+        //  İNTERAKTİF PENALTİ — ATIŞ İŞLE
+        //  yon: "SOL" | "ORTA" | "SAĞ"
+        //  Geri dönüş: true = penaltı serisi bitti, false = devam
+        // =====================================================
+        public bool PenaltiYonuIsle(string yon)
+        {
+            string[] yonler = { "SOL", "ORTA", "SAĞ" };
+            Random rnd = new();
 
-            Kaleci evKaleci = evSahibi.Kaleci;
-            Kaleci depKaleci = deplasman.Kaleci;
+            // Kaleci rastgele yön seçer
+            string kaleci_yon = yonler[rnd.Next(3)];
 
-            int evGol = 0;
-            int depGol = 0;
-            int tur = 0;     // Tamamlanan tur sayısı (her tur = her iki takım atar)
-            const int MIN_TUR = 5;
+            bool gol;
+            string atanTakim, kaleden;
 
-            while (true)
+            if (PenaltiEvSirasindaMi)
             {
-                // Atıcı indeksi: ilk 5 turda 0–4, sonrasında round-robin
-                int aticiIdx = tur < MIN_TUR ? tur : tur % 6;
+                // Ev sahibi atıyor, deplasman kalecisi kurtarıyor
+                var atici = evSahibi.Forvet ?? (Futbolcu?)evSahibi.OOS;
+                var kaleci = deplasman.Kaleci;
 
-                var evAtic = evAticilar[aticiIdx % evAticilar.Count];
-                var depAtic = depAticilar[aticiIdx % depAticilar.Count];
+                // Yön tutarsa (%30) kurtarır, tutmazsa (%70) gol
+                // Ama kalecinin Kalecilik değeri de devreye girer
+                int kurtarmaBonus = (yon == kaleci_yon) ? 30 : 0;
+                int kurtarisGucu = (int)((kaleci?.Kalecilik ?? 75) * 0.6) + kurtarmaBonus;
+                int sutGucu = (int)((atici?.Bitiricilik ?? 75) * 0.7);
+                gol = rnd.Next(sutGucu + kurtarisGucu) < sutGucu;
 
-                bool evAttı = !depKaleci.PenaltiKurtar(evAtic);
-                bool depAttı = !evKaleci.PenaltiKurtar(depAtic);
+                atanTakim = evSahibi.Isim;
+                kaleden = kaleci?.isim ?? "Kaleci";
+                if (gol) PenaltiEvGol++;
+                SpikerMesajYayinla?.Invoke(
+                    $"  {atanTakim}: {yon} → Kaleci: {kaleci_yon} → {(gol ? "⚽ GOL!" : "🧤 Kurtarıldı!")}");
 
-                if (evAttı) evGol++;
-                if (depAttı) depGol++;
+                PenaltiEvSirasindaMi = false; // Sıra deplasmanına geçer
+            }
+            else
+            {
+                // Deplasman atıyor, ev sahibi kalecisi kurtarıyor
+                var atici = deplasman.Forvet ?? (Futbolcu?)deplasman.OOS;
+                var kaleci = evSahibi.Kaleci;
 
-                tur++;
+                int kurtarmaBonus = (yon == kaleci_yon) ? 30 : 0;
+                int kurtarisGucu = (int)((kaleci?.Kalecilik ?? 75) * 0.6) + kurtarmaBonus;
+                int sutGucu = (int)((atici?.Bitiricilik ?? 75) * 0.7);
+                gol = rnd.Next(sutGucu + kurtarisGucu) < sutGucu;
 
-                string turLog = $"  Tur {tur}: {evSahibi.Isim} {evGol}-{depGol} {deplasman.Isim}" +
-                                $"  ({evAtic.isim} {(evAttı ? "✅" : "❌")} | " +
-                                $"{depAtic.isim} {(depAttı ? "✅" : "❌")})";
-                PenaltiLog.Add(turLog);
-                SpikerMesajYayinla?.Invoke(turLog);
+                atanTakim = deplasman.Isim;
+                kaleden = kaleci?.isim ?? "Kaleci";
+                if (gol) PenaltiDepGol++;
+                SpikerMesajYayinla?.Invoke(
+                    $"  {atanTakim}: {yon} → Kaleci: {kaleci_yon} → {(gol ? "⚽ GOL!" : "🧤 Kurtarıldı!")}");
 
-                // En az 5 tur atıldıktan sonra biri önde çıkınca bitir
-                if (tur >= MIN_TUR && evGol != depGol)
-                    break;
+                // Her iki takım attıktan sonra tur tamamlandı
+                PenaltiTur++;
+                PenaltiEvSirasindaMi = true;
 
-                // Ani ölüm mesajı (sadece bir kez)
-                if (tur == MIN_TUR && evGol == depGol)
-                    SpikerMesajYayinla?.Invoke("⚠️ 5 turda eşitlik! ANİ ÖLÜM kuralı başladı...");
+                // Seri bitti mi kontrol et
+                bool bitti = PenaltiBittiMiKontrol();
+                if (bitti) return true;
+
+                // Bir sonraki tura hazırla
+                string turBilgi = PenaltiAniOlum
+                    ? $"⚠️ ANİ ÖLÜM — Tur {PenaltiTur + 1}! {evSahibi.Isim} başlıyor."
+                    : $"Tur {PenaltiTur + 1} / 5 — Skor: {PenaltiEvGol}-{PenaltiDepGol} — {evSahibi.Isim} başlıyor!";
+                SpikerMesajYayinla?.Invoke(turBilgi);
             }
 
-            string kazanan = evGol > depGol ? evSahibi.Isim : deplasman.Isim;
-            PenaltiKazanani = kazanan;
-            SpikerMesajYayinla?.Invoke(
-                $"🏆 PENALTI KAZANANI: {kazanan}! ({evGol}-{depGol})");
+            return false; // Henüz bitmedi
         }
 
-        /// <summary>
-        /// 6 oyuncuyu K→D→DOS→MOS→OOS→F sırasıyla döndürür.
-        /// </summary>
-        private static List<Futbolcu> OyuncuSirasi(Takim t)
+        private bool PentiBitecek => PenaltiTur >= 5 && PenaltiEvGol != PenaltiDepGol;
+
+        private bool PenaltiBittiMiKontrol()
         {
-            var liste = new List<Futbolcu>();
-            if (t.Kaleci != null) liste.Add(t.Kaleci);
-            if (t.Defans != null) liste.Add(t.Defans);
-            if (t.DOS != null) liste.Add(t.DOS);
-            if (t.MOS != null) liste.Add(t.MOS);
-            if (t.OOS != null) liste.Add(t.OOS);
-            if (t.Forvet != null) liste.Add(t.Forvet);
-            return liste;
+            const int MIN_TUR = 5;
+
+            if (PenaltiTur >= MIN_TUR)
+            {
+                if (PenaltiEvGol != PenaltiDepGol)
+                {
+                    // Kazanan belli
+                    PenaltiKazanani = PenaltiEvGol > PenaltiDepGol ? evSahibi.Isim : deplasman.Isim;
+                    PenaltiSonMesaj = $"🏆 {PenaltiKazanani} penaltıları kazandı! ({PenaltiEvGol}-{PenaltiDepGol})";
+                    SpikerMesajYayinla?.Invoke(PenaltiSonMesaj);
+                    PenaltiAsamasindaMi = false;
+                    return true;
+                }
+                else if (!PenaltiAniOlum)
+                {
+                    // Ani ölüm başlıyor
+                    PenaltiAniOlum = true;
+                    SpikerMesajYayinla?.Invoke("⚠️ 5 turda eşitlik! ANİ ÖLÜM başlıyor...");
+                }
+                else
+                {
+                    // Ani ölümde de biri önde — bitti
+                    // (Bu kontrol zaten yukarıda evGol != depGol koşulunda yakalanır)
+                }
+            }
+            return false;
         }
+
+        // Mevcut atıcı takım adını döndürür (UI için)
+        public string SiradakiAtanTakim =>
+            PenaltiEvSirasindaMi ? evSahibi.Isim : deplasman.Isim;
 
         // =====================================================
-        //  MOD UYGULAMA
+        //  MOD UYGULAMA — FIX: her iki takıma da boost
         // =====================================================
         public void ModUygula()
         {
-            EfsaneBoostAldilar.Clear();
+            EvEfsaneBoostlar.Clear();
+            DepEfsaneBoostlar.Clear();
+
             switch (SecilenMod)
             {
-                case OyunModu.Klasik: break;
+                case OyunModu.Klasik:
+                    break;
+
                 case OyunModu.Dengeli:
                     DengelemeUygula(evSahibi);
                     DengelemeUygula(deplasman);
                     break;
+
                 case OyunModu.Efsane:
                     DengelemeUygula(evSahibi);
                     DengelemeUygula(deplasman);
-                    EfsaneBoostUygula(evSahibi);
+                    // Her iki takıma da rastgele 3 oyuncu boost
+                    EfsaneBoostUygula(evSahibi, EvEfsaneBoostlar);
+                    EfsaneBoostUygula(deplasman, DepEfsaneBoostlar);
                     break;
             }
         }
@@ -250,7 +321,7 @@ namespace FutbolManagerMobil
             f.Bitiricilik = f.Topcalma = f.Atak = f.Def = f.Kalecilik = DENGE_DEGERI;
         }
 
-        private void EfsaneBoostUygula(Takim t)
+        private static void EfsaneBoostUygula(Takim t, List<string> kayit)
         {
             const int BOOST = 5;
             var secilenler = TakimOyunculari(t)
@@ -259,7 +330,7 @@ namespace FutbolManagerMobil
             {
                 o.Hiz += BOOST; o.Teknik += BOOST;
                 o.Def += BOOST; o.Bitiricilik += BOOST; o.Guc += BOOST;
-                EfsaneBoostAldilar.Add(o.isim);
+                kayit.Add(o.isim);
             }
         }
 
@@ -280,6 +351,7 @@ namespace FutbolManagerMobil
         {
             topEvSahibindeMi = !topEvSahibindeMi;
             topunYeri = yeniYer;
+            IsSantra = false;
             SpikerMesajYayinla?.Invoke("KRİTİK HATA! Top rakibe geçti!");
             HedefleriBelirle();
         }
@@ -291,6 +363,7 @@ namespace FutbolManagerMobil
             GolOlduEkranaBildir?.Invoke(topEvSahibindeMi);
             topunYeri = SahaBolgesi.MOS;
             topEvSahibindeMi = !topEvSahibindeMi;
+            IsSantra = true;   // Gol sonrası santra
             HedefleriBelirle();
         }
 
@@ -299,6 +372,7 @@ namespace FutbolManagerMobil
             if (macBittiMi) return;
             SonSecilenHucumHamlesi = hamle;
             SavunmaBekleniyorMu = true;
+            IsSantra = false; // Santra bozuldu, oyun başladı
             string hTakim = topEvSahibindeMi ? evSahibi.Isim : deplasman.Isim;
             SpikerMesajYayinla?.Invoke($"{hTakim} atağı: {hamle} deniyor!");
         }
@@ -309,7 +383,7 @@ namespace FutbolManagerMobil
         public void SavunmaHamlesiYap(string sHamle)
         {
             if (!SavunmaBekleniyorMu) return;
-            Random rnd = new Random();
+            Random rnd = new();
 
             dakika += HamleSuresiHesapla(SonSecilenHucumHamlesi);
 
@@ -322,14 +396,14 @@ namespace FutbolManagerMobil
                 hT.ToplamSut++;
 
             bool basarili = false;
-            Futbolcu hcu = null, sav = null;
+            Futbolcu? hcu = null, sav = null;
 
             switch (topunYeri)
             {
                 case SahaBolgesi.K:
                     basarili = SonSecilenHucumHamlesi.Contains("Kısa Pas")
-                        ? hT.Kaleci.KisaPasAt(sT.Forvet)
-                        : hT.Kaleci.UzunPasAt(sT.OOS);
+                        ? hT.Kaleci!.KisaPasAt(sT.Forvet!)
+                        : hT.Kaleci!.UzunPasAt(sT.OOS!);
                     if (basarili)
                     {
                         topunYeri = SonSecilenHucumHamlesi.Contains("Degaj") ? SahaBolgesi.DOS : SahaBolgesi.D;
@@ -346,7 +420,7 @@ namespace FutbolManagerMobil
                     }
                     else
                     {
-                        basarili = hT.Defans.KisaPasAt(sT.MOS);
+                        basarili = hT.Defans!.KisaPasAt(sT.MOS!);
                         if (basarili) { topunYeri = SahaBolgesi.DOS; SpikerMesajYayinla?.Invoke($"{hT.Defans.isim} topu orta sahaya çıkardı."); }
                         else TopKaptir(SahaBolgesi.MOS);
                     }
@@ -356,39 +430,39 @@ namespace FutbolManagerMobil
                     hcu = hT.DOS; sav = sT.OOS;
                     if (SonSecilenHucumHamlesi.Contains("Kısa Pas (OOS)"))
                     {
-                        basarili = hcu.KisaPasAt(sav);
-                        if (basarili) { topunYeri = SahaBolgesi.OOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} topu OOS'a aktardı!"); }
+                        basarili = hcu!.KisaPasAt(sav!);
+                        if (basarili) { topunYeri = SahaBolgesi.OOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} OOS'a aktardı!"); }
                         else TopKaptir(SahaBolgesi.MOS);
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Çalım At"))
                     {
-                        basarili = hcu.CalimAt(sav);
+                        basarili = hcu!.CalimAt(sav!);
                         if (basarili) { topunYeri = SahaBolgesi.MOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} çalımla orta sahaya!"); }
                         else TopKaptir(SahaBolgesi.MOS);
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Geri Pas"))
                     {
                         topunYeri = SahaBolgesi.D;
-                        SpikerMesajYayinla?.Invoke($"{hcu.isim} risk almadı.");
+                        SpikerMesajYayinla?.Invoke($"{hcu?.isim} risk almadı.");
                     }
                     break;
 
                 case SahaBolgesi.MOS:
                     hcu = hT.MOS; sav = sT.MOS;
-                    if (SonSecilenHucumHamlesi.Contains("Şut Çek") || SonSecilenHucumHamlesi.Contains("GOL VURUŞU"))
+                    if (SonSecilenHucumHamlesi.Contains("Şut Çek") || SonSecilenHucumHamlesi.Contains("Gol Vuruşu"))
                     {
-                        SpikerMesajYayinla?.Invoke($"{hcu.isim} o mesafeden şut, etkisiz!");
+                        SpikerMesajYayinla?.Invoke($"{hcu?.isim} o mesafeden şut — etkisiz!");
                         TopKaptir(SahaBolgesi.MOS);
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Ara Pası"))
                     {
-                        basarili = hcu.KisaPasAt(sav);
+                        basarili = hcu!.KisaPasAt(sav!);
                         if (basarili) { topunYeri = SahaBolgesi.OOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} tehlikeli ara pası!"); }
                         else TopKaptir(SahaBolgesi.D);
                     }
                     else
                     {
-                        basarili = hcu.KisaPasAt(sav);
+                        basarili = hcu!.KisaPasAt(sav!);
                         if (basarili) { topunYeri = SahaBolgesi.OOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} dikine pasla hücum!"); }
                         else TopKaptir(SahaBolgesi.MOS);
                     }
@@ -398,40 +472,89 @@ namespace FutbolManagerMobil
                     hcu = hT.OOS; sav = sT.DOS;
                     if (SonSecilenHucumHamlesi.Contains("Ara Pası"))
                     {
-                        basarili = hcu.KisaPasAt(sav);
+                        basarili = hcu!.KisaPasAt(sav!);
                         if (basarili) { topunYeri = SahaBolgesi.F; SpikerMesajYayinla?.Invoke($"{hcu.isim} şahane ara pası!"); }
                         else TopKaptir(SahaBolgesi.D);
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Şut Çek") || SonSecilenHucumHamlesi.Contains("GOL VURUŞU"))
                     {
-                        if (((OrtaSaha)hcu).UzaktanSutAt(sT.Kaleci))
+                        if (((OrtaSaha)hcu!).UzaktanSutAt(sT.Kaleci!))
                             GolOldu(hcu.isim);
                         else
                         {
                             topunYeri = SahaBolgesi.K;
                             topEvSahibindeMi = !topEvSahibindeMi;
-                            SpikerMesajYayinla?.Invoke("Müthiş şut ama kaleci kurtardı! Top karşı takımda.");
+                            SpikerMesajYayinla?.Invoke("Müthiş şut ama kaleci kurtardı!");
                         }
                     }
                     break;
 
                 case SahaBolgesi.F:
-                    hcu = hT.Forvet; sav = sT.Kaleci;
-                    if (SonSecilenHucumHamlesi.Contains("GOL VURUŞU") || SonSecilenHucumHamlesi.Contains("Şut Çek"))
+                    hcu = hT.Forvet;
+                    sav = sT.Kaleci;
+                    Random rnd2 = new Random();
+                    int zar = rnd2.Next(1, 101); // 1-100 arası şans faktörü
+
+                    if (SonSecilenHucumHamlesi.Contains("Gol Vuruşu") || SonSecilenHucumHamlesi.Contains("Şut Çek"))
                     {
-                        if (sT.Kaleci.KurtarisYap(hT.Forvet)) { TopKaptir(SahaBolgesi.K); SpikerMesajYayinla?.Invoke($"{sT.Kaleci.isim} devleşti!"); }
-                        else GolOldu(hcu.isim);
+                        if (sT.Kaleci!.KurtarisYap(hT.Forvet!))
+                        {
+                            // --- ŞUT KURTARILDI: İHTİMALLER BAŞLIYOR ---
+                            if (zar <= 40)
+                            {
+                                // SENARYO A: Kaleci topu kontrol etti (%40)
+                                TopKaptir(SahaBolgesi.K);
+                                SpikerMesajYayinla?.Invoke($"{sT.Kaleci.isim} topu iki hamlede kontrol etti.");
+                            }
+                            else if (zar <= 70)
+                            {
+                                // SENARYO B: Savunma uzaklaştırdı (%30)
+                                // Topu senin istediğin gibi Defans (D) bölgesine atıyoruz
+                                TopKaptir(SahaBolgesi.D);
+                                SpikerMesajYayinla?.Invoke("Savunma topu tehlike bölgesinin dışına vurdu!");
+                            }
+                            else
+                            {
+                                // SENARYO C: Dönen Top / Rebound (%30)
+                                // Top sende kalıyor ama bir tık geriye (OOS) sekiyor
+                                topunYeri = SahaBolgesi.OOS;
+                                SpikerMesajYayinla?.Invoke("Kaleciden seken top! Tehlike hala geçmedi!");
+                            }
+                        }
+                        else
+                        {
+                            GolOldu(hcu!.isim);
+                        }
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Çalım At"))
                     {
-                        if (hcu.CalimAt(sav)) { SpikerMesajYayinla?.Invoke($"{hcu.isim} kaleciyi geçti!"); GolOldu(hcu.isim); }
-                        else TopKaptir(SahaBolgesi.K);
+                        if (hcu!.CalimAt(sav!))
+                        {
+                            SpikerMesajYayinla?.Invoke($"{hcu.isim} kaleciyi geçti!");
+                            GolOldu(hcu.isim);
+                        }
+                        else
+                        {
+                            // Çalım başarısızsa kaleci topu alır
+                            TopKaptir(SahaBolgesi.K);
+                            SpikerMesajYayinla?.Invoke($"{hcu.isim} kaleciyi geçemedi, top kalecide.");
+                        }
                     }
                     else if (SonSecilenHucumHamlesi.Contains("Ara Pası"))
                     {
-                        if (hcu.KisaPasAt(sT.Defans)) { topunYeri = SahaBolgesi.OOS; SpikerMesajYayinla?.Invoke($"{hcu.isim} geri çıkardı."); }
-                        else TopKaptir(SahaBolgesi.D);
+                        if (hcu!.KisaPasAt(sT.Defans!))
+                        {
+                            topunYeri = SahaBolgesi.OOS;
+                            SpikerMesajYayinla?.Invoke($"{hcu.isim} arkadaşını gördü, hücum tazeleniyor.");
+                        }
+                        else
+                        {
+                            TopKaptir(SahaBolgesi.D);
+                            SpikerMesajYayinla?.Invoke("Pas arası! Savunma topu kazandı.");
+                        }
                     }
+
+                     
                     break;
             }
 
@@ -444,22 +567,26 @@ namespace FutbolManagerMobil
         }
 
         // =====================================================
-        //  KOORDİNAT SİSTEMİ
+        //  KOORDİNAT SİSTEMİ — Yüzdelik, ekran bağımsız
         // =====================================================
         public void HedefleriBelirle()
         {
-            int w = SahaGenislik, h = SahaYukseklik;
-            Random rnd = new Random();
-            switch (topunYeri)
+            // topX ve topY artık 0.0–1.0 aralığında oran olarak saklanır
+            // SahaCizici bunu gerçek piksel koordinatına çevirir
+            Random rnd = new();
+            double xOran = topunYeri switch
             {
-                case SahaBolgesi.K: topX = topEvSahibindeMi ? (int)(w * 0.05) : (int)(w * 0.95); break;
-                case SahaBolgesi.D: topX = topEvSahibindeMi ? (int)(w * 0.20) : (int)(w * 0.80); break;
-                case SahaBolgesi.DOS: topX = topEvSahibindeMi ? (int)(w * 0.35) : (int)(w * 0.65); break;
-                case SahaBolgesi.MOS: topX = w / 2; break;
-                case SahaBolgesi.OOS: topX = topEvSahibindeMi ? (int)(w * 0.65) : (int)(w * 0.35); break;
-                case SahaBolgesi.F: topX = topEvSahibindeMi ? (int)(w * 0.85) : (int)(w * 0.15); break;
-            }
-            topY = (h / 2) + rnd.Next(-20, 20);
+                SahaBolgesi.K => topEvSahibindeMi ? 0.05 : 0.95,
+                SahaBolgesi.D => topEvSahibindeMi ? 0.20 : 0.80,
+                SahaBolgesi.DOS => topEvSahibindeMi ? 0.35 : 0.65,
+                SahaBolgesi.MOS => 0.50,
+                SahaBolgesi.OOS => topEvSahibindeMi ? 0.65 : 0.35,
+                SahaBolgesi.F => topEvSahibindeMi ? 0.85 : 0.15,
+                _ => 0.50
+            };
+            // topX ve topY'yi artık oran olarak tut (0–1000 scale)
+            topX = (int)(xOran * 1000);
+            topY = 500 + rnd.Next(-100, 100); // Y de oransal (0–1000)
         }
     }
 }

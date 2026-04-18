@@ -7,7 +7,7 @@ namespace FutbolManagerMobil;
 
 public partial class SelectionPage : ContentPage
 {
-    List<Takim> tumTakimlar;
+    List<Takim> tumTakimlar = new();
 
     private readonly Dictionary<string, OyunMotoru.OyunModu> modHaritasi = new()
     {
@@ -18,9 +18,9 @@ public partial class SelectionPage : ContentPage
 
     private readonly Dictionary<OyunMotoru.OyunModu, string> modAciklamalari = new()
     {
-        { OyunMotoru.OyunModu.Klasik,   "Oyuncular gerçek güçleriyle oynuyor. Güçlü takımlar avantajlı, zayıf takımlar dezavantajlı." },
-        { OyunMotoru.OyunModu.Dengeli,  "Tüm özellikler 75'e sabitlenir. Taktik ve hamle seçimi her şeyi belirler." },
-        { OyunMotoru.OyunModu.Efsane,   "Güçler 75'e dengelenir; senin takımından rastgele 3 oyuncuya +5 boost!" },
+        { OyunMotoru.OyunModu.Klasik,  "Oyuncular gerçek güçleriyle oynuyor. Güçlü takımlar avantajlı." },
+        { OyunMotoru.OyunModu.Dengeli, "Tüm özellikler 75'e sabitlenir. Taktik ve hamle her şeyi belirler." },
+        { OyunMotoru.OyunModu.Efsane,  "Güçler 75'e dengelenir; her iki takımdan da 3 oyuncuya +5 boost!" },
     };
 
     private readonly Dictionary<string, OyunMotoru.MacTipi> tipHaritasi = new()
@@ -46,7 +46,7 @@ public partial class SelectionPage : ContentPage
         pckMacTipi.ItemsSource = tipHaritasi.Keys.ToList();
     }
 
-    // --- VALİDASYON ---
+    // ── VALİDASYON ──
     private void ValidasyonYap()
     {
         bool hazir =
@@ -82,9 +82,16 @@ public partial class SelectionPage : ContentPage
         ValidasyonYap();
     }
 
-    // --- MAÇA BAŞLA ---
+    // ── LİG TABLOSUNA GİT ──
+    private async void OnPuanDurumuClicked(object sender, EventArgs e)
+    {
+        await Navigation.PushAsync(new LeaguePage());
+    }
+
+    // ── MAÇA BAŞLA ──
     private async void OnMacaBaslaClicked(object sender, EventArgs e)
     {
+        // Temel alan kontrolleri
         if (pckEvSahibi.SelectedIndex == -1 || pckDeplasman.SelectedIndex == -1)
         { await DisplayAlert("Hata", "Lütfen iki takımı da seçin!", "Tamam"); return; }
 
@@ -97,18 +104,37 @@ public partial class SelectionPage : ContentPage
         if (pckMacTipi.SelectedIndex == -1)
         { await DisplayAlert("Hata", "Lütfen bir maç tipi seçin!", "Tamam"); return; }
 
+        // ── YENİ: Aynı takım veya aynı hoca kontrolü ──
         var secilenEv = tumTakimlar[pckEvSahibi.SelectedIndex];
         var secilenDep = tumTakimlar[pckDeplasman.SelectedIndex];
+
+        if (secilenEv.TakimID == secilenDep.TakimID)
+        {
+            await DisplayAlert("Geçersiz Seçim",
+                "Ev sahibi ve deplasman takımı aynı olamaz!\nLütfen farklı takımlar seçin.",
+                "Tamam");
+            return;
+        }
+
+        string evHoca = entEvHoca.Text.Trim();
+        string depHoca = entDepHoca.Text.Trim();
+
+        if (string.Equals(evHoca, depHoca, StringComparison.OrdinalIgnoreCase))
+        {
+            await DisplayAlert("Geçersiz Seçim",
+                "İki takımın hoca adı aynı olamaz!\nLütfen farklı hoca isimleri girin.",
+                "Tamam");
+            return;
+        }
+
         var secilenMod = modHaritasi[(string)pckOyunModu.SelectedItem];
         var secilenTip = tipHaritasi[(string)pckMacTipi.SelectedItem];
 
         await Navigation.PushAsync(new MainPage(
             secilenEv.TakimID, secilenEv.Isim,
             secilenDep.TakimID, secilenDep.Isim,
-            entEvHoca.Text.Trim(),
-            entDepHoca.Text.Trim(),
-            secilenMod,
-            secilenTip
+            evHoca, depHoca,
+            secilenMod, secilenTip
         ));
     }
 }

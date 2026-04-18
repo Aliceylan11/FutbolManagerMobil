@@ -94,6 +94,17 @@
                     BackgroundColor="#1E5D1E" TextColor="White" FontAttributes="Bold"
                     HeightRequest="58" CornerRadius="15" FontSize="17"
                     IsEnabled="False" Opacity="0.5" VerticalOptions="End"/>
+            <Button Text="📊 Lig Tablosu"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    BackgroundColor="#1A1A1A"
+                    TextColor="Gold"
+                    BorderColor="Gold"
+                    BorderWidth="1"
+                    CornerRadius="10"
+                    HorizontalOptions="End"
+                    Margin="10"
+                    Clicked="OnPuanDurumuClicked" />
 
         </Grid>
     </ScrollView>

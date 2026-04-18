@@ -23,8 +23,8 @@
         // BURASI KRİTİK: Uygulamanın hangi sayfayla başlayacağını buradan yönetiyoruz
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            // AppShell yerine doğrudan SelectionPage (veya MainPage) ile başlat
-            return new Window(new NavigationPage(new SelectionPage()));
+            // AppShell yerine doğrudan LoadingPage ile başlat
+            return new Window(new NavigationPage(new LoadingPage()));
         }
     }
 }

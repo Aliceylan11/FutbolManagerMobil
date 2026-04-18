@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FutbolManagerMobil.LoadingPage"
+             Title="LoadingPage"
+             NavigationPage.HasNavigationBar="False">
+    <Grid BackgroundColor="#121212">
+        <VerticalStackLayout VerticalOptions="Center" Spacing="20">
+            <Image x:Name="imgLogo" 
+                   Source="oyun_logosu.png" 
+                   WidthRequest="150" 
+                   HeightRequest="150" 
+                   Opacity="0" 
+                   Scale="0.5" />
+
+            <ActivityIndicator x:Name="loader" 
+                           IsRunning="True" 
+                           Color="Gold" 
+                           Opacity="0" />
+            <Label x:Name="lblDurum" 
+               Text="Lig Verileri Yükleniyor..." 
+               TextColor="White" 
+               HorizontalOptions="Center" 
+               Opacity="0" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

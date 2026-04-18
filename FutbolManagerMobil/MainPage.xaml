@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:FutbolManagerMobil"
@@ -6,64 +6,140 @@
              BackgroundColor="#121212"
              NavigationPage.HasNavigationBar="False">
 
-    <Grid RowDefinitions="1.2*, 5.5*, 3.3*" Padding="10" RowSpacing="5">
-        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, *" BackgroundColor="#1A1A1A" Padding="5,2">
+    <Grid RowDefinitions="Auto, 5*, 4*" Padding="8" RowSpacing="6">
 
-            <Label Grid.Column="0" x:Name="lblEvTakimAd" Text="EV" TextColor="White" FontSize="16" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
-
-            <Label Grid.Column="1" x:Name="lblSkor" Text="0 - 0" TextColor="White" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
-
-            <Grid Grid.Column="2">
-                <Label x:Name="lblDepTakimAd" Text="DEP" TextColor="White" FontSize="16" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center"/>
-                <Label x:Name="lblDakika" Text="1:00" TextColor="Gold" FontSize="14" FontAttributes="Bold" HorizontalOptions="End" VerticalOptions="Center" Margin="0,0,10,0"/>
+        <!-- ── SKOR BAŞLIĞI ── -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto, *"
+              BackgroundColor="#1A1A1A" Padding="6,5" ColumnSpacing="4">
+            <Label Grid.Column="0" x:Name="lblEvTakimAd"
+                   Text="EV" TextColor="Gold" FontSize="18" FontAttributes="Bold"
+                   HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Label Grid.Column="1" x:Name="lblSkor"
+                   Text="0 - 0" TextColor="White" FontSize="22" FontAttributes="Bold"
+                   HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Label Grid.Column="2" x:Name="lblDakika"
+                   Text="1'" TextColor="Gold" FontSize="15" FontAttributes="Bold"
+                   HorizontalOptions="Center" VerticalOptions="Center"/>
+            <Grid Grid.Column="3" ColumnDefinitions="*, Auto">
+                <Label Grid.Column="0" x:Name="lblDepTakimAd"
+                       Text="DEP" TextColor="Cyan" FontSize="18" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Button Grid.Column="1" Text="📊"
+                        Clicked="OnPuanDurumuClicked"
+                        FontSize="16" BackgroundColor="Transparent"
+                        WidthRequest="38" HeightRequest="38" Padding="0"/>
             </Grid>
-
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="2*, 1*" ColumnSpacing="5">
-
-            <Grid Grid.Column="0">
-                <Border Stroke="White" StrokeThickness="1" BackgroundColor="#1E5D1E">
-                    <GraphicsView x:Name="sahaGrafik"/>
-                </Border>
-                <Grid ColumnDefinitions="*,*,*,*,*,*,*" VerticalOptions="End" HeightRequest="16" Background="#80000000">
-                    <Label Text="K" Grid.Column="0" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="D" Grid.Column="1" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="DOS" Grid.Column="2" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="MOS" Grid.Column="3" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="OOS" Grid.Column="4" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="F" Grid.Column="5" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                    <Label Text="K" Grid.Column="6" HorizontalOptions="Center" TextColor="White" FontSize="8"/>
-                </Grid>
-            </Grid>
-
-            <Border Grid.Column="1" Background="#F8F9FA" Padding="5" StrokeShape="RoundRectangle 8">
+        <!-- ── SAHA + SPİKER ── -->
+        <Grid Grid.Row="1" ColumnDefinitions="2.2*, 1*" ColumnSpacing="6">
+            <Border Grid.Column="0" Stroke="White" StrokeThickness="1"
+                    BackgroundColor="#1E5D1E" StrokeShape="RoundRectangle 4">
+                <GraphicsView x:Name="sahaGrafik"/>
+            </Border>
+            <Border Grid.Column="1" BackgroundColor="#121212" Padding="6"
+                    StrokeShape="RoundRectangle 8" Stroke="#444444">
                 <ScrollView x:Name="scrSpiker">
-                    <VerticalStackLayout x:Name="slSpiker" Spacing="2">
-                        <Label x:Name="lblSpiker" Text="Spiker: Hazır." TextColor="DarkBlue" FontSize="11" FontAttributes="Italic" LineBreakMode="WordWrap"/>
+                    <VerticalStackLayout x:Name="slSpiker" Spacing="4">
+                        <Label x:Name="lblSpiker"
+                               Text="⚽ Maç başlıyor..."
+                               TextColor="#FFFFFF" FontSize="15"
+                               FontAttributes="Bold" LineBreakMode="WordWrap"/>
                     </VerticalStackLayout>
                 </ScrollView>
             </Border>
         </Grid>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="10">
+        <!-- ── KONTROL PANELİ ── -->
+        <Grid Grid.Row="2" RowDefinitions="*">
 
-            <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *, *, *" RowSpacing="3">
-                <Label Grid.Row="0" x:Name="lblHucumBaslik" Text="HÜCUM" TextColor="Gold" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"/>
-                <Label Grid.Row="1" x:Name="lblAktifOyuncu" Text="Oyuncu..." TextColor="White" FontSize="10" HorizontalOptions="Center" Margin="0,0,0,2"/>
-                <Button Grid.Row="2" x:Name="btnKisaPas" Text="PAS" Clicked="HamleYap" FontSize="11" BackgroundColor="#333" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
-                <Button Grid.Row="3" x:Name="btnAraPasi" Text="ARA PAS" Clicked="HamleYap" FontSize="11" BackgroundColor="#333" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
-                <Button Grid.Row="4" x:Name="btnSutCek" Text="ŞUT" Clicked="HamleYap" FontSize="11" BackgroundColor="#E74C3C" FontAttributes="Bold" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
+            <!-- Normal Hamle Paneli:
+                 Sol = Ev Sahibi (DAIMA), Sağ = Deplasman (DAIMA) -->
+            <Grid x:Name="pnlNormalHamle" ColumnDefinitions="*, *" ColumnSpacing="8">
+
+                <!-- EV SAHİBİ PANELİ (Sol — Sabit) -->
+                <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *, *, *" RowSpacing="5">
+                    <!-- Başlık: Ev takım adı daima burada -->
+                    <Label Grid.Row="0" x:Name="lblEvPanelBaslik"
+                           Text="EV SAHİBİ" TextColor="Gold" FontSize="14"
+                           FontAttributes="Bold" HorizontalOptions="Center"/>
+                    <!-- Aktif oyuncu ismi (hücum veya savunma) -->
+                    <Label Grid.Row="1" x:Name="lblEvOyuncu"
+                           Text="⚽ —" TextColor="#CCCCCC" FontSize="12"
+                           HorizontalOptions="Center"/>
+
+                    <Button Grid.Row="2" x:Name="btnEv1"
+                            Text="—" Clicked="HamleEvClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#2A4A2A" CornerRadius="8"
+                            HeightRequest="60" Padding="0"/>
+                    <Button Grid.Row="3" x:Name="btnEv2"
+                            Text="—" Clicked="HamleEvClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#2A3A4A" CornerRadius="8"
+                            HeightRequest="60" Padding="0"/>
+                    <Button Grid.Row="4" x:Name="btnEv3"
+                            Text="—" Clicked="HamleEvClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#8B1A1A" CornerRadius="8"
+                            HeightRequest="65" Padding="0"/>
+                </Grid>
+
+                <!-- DEPLASMAN PANELİ (Sağ — Sabit) -->
+                <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *, *, *" RowSpacing="5">
+                    <Label Grid.Row="0" x:Name="lblDepPanelBaslik"
+                           Text="DEPLASMAN" TextColor="Cyan" FontSize="14"
+                           FontAttributes="Bold" HorizontalOptions="Center"/>
+                    <Label Grid.Row="1" x:Name="lblDepOyuncu"
+                           Text="🛡️ —" TextColor="#AADDFF" FontSize="12"
+                           HorizontalOptions="Center"/>
+
+                    <Button Grid.Row="2" x:Name="btnDep1"
+                            Text="—" Clicked="HamleDepClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#2A4A2A" CornerRadius="8"
+                            HeightRequest="60" Padding="0"/>
+                    <Button Grid.Row="3" x:Name="btnDep2"
+                            Text="—" Clicked="HamleDepClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#2A3A4A" CornerRadius="8"
+                            HeightRequest="60" Padding="0"/>
+                    <Button Grid.Row="4" x:Name="btnDep3"
+                            Text="—" Clicked="HamleDepClicked"
+                            FontSize="19" FontAttributes="Bold" TextColor="White"
+                            BackgroundColor="#8B1A1A" CornerRadius="8"
+                            HeightRequest="65" Padding="0"/>
+                </Grid>
             </Grid>
 
-            <Grid Grid.Column="1" RowDefinitions="Auto, Auto, *, *, *" RowSpacing="3">
-                <Label Grid.Row="0" x:Name="lblSavunmaBaslik" Text="SAVUNMA" TextColor="Cyan" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"/>
-                <Label Grid.Row="1" Text=" " FontSize="10" Margin="0,0,0,2"/>
-                <Button Grid.Row="2" x:Name="btnPress" Text="PRESS" Clicked="HamleYap" FontSize="11" BackgroundColor="#222" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
-                <Button Grid.Row="3" x:Name="btnTopaKay" Text="KAY" Clicked="HamleYap" FontSize="11" BackgroundColor="#222" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
-                <Button Grid.Row="4" x:Name="btnMarkaj" Text="MARKAJ" Clicked="HamleYap" FontSize="11" BackgroundColor="#222" CornerRadius="5" Padding="0" MinimumHeightRequest="20"/>
+            <!-- PENALTİ PANELİ -->
+            <Grid x:Name="pnlPenalti" IsVisible="False"
+                  RowDefinitions="Auto, Auto, *" RowSpacing="10">
+                <Label Grid.Row="0" x:Name="lblPenaltiBaslik"
+                       Text="⚡ PENALTİ ATIŞI"
+                       TextColor="Gold" FontSize="18" FontAttributes="Bold"
+                       HorizontalOptions="Center"/>
+                <Label Grid.Row="1" x:Name="lblPenaltiDurum"
+                       Text="Skor: 0-0 | Tur 1/5"
+                       TextColor="White" FontSize="14" HorizontalOptions="Center"/>
+                <Grid Grid.Row="2" ColumnDefinitions="*, *, *" ColumnSpacing="10">
+                    <Button Grid.Column="0" Text="◀ SOL"
+                            Clicked="OnPenaltiYonClicked"
+                            FontSize="18" FontAttributes="Bold"
+                            BackgroundColor="#2A5C8A" TextColor="White"
+                            CornerRadius="12" HeightRequest="80" Padding="0"/>
+                    <Button Grid.Column="1" Text="⬆ ORTA"
+                            Clicked="OnPenaltiYonClicked"
+                            FontSize="18" FontAttributes="Bold"
+                            BackgroundColor="#2A5C2A" TextColor="White"
+                            CornerRadius="12" HeightRequest="80" Padding="0"/>
+                    <Button Grid.Column="2" Text="SAĞ ▶"
+                            Clicked="OnPenaltiYonClicked"
+                            FontSize="18" FontAttributes="Bold"
+                            BackgroundColor="#8A2A2A" TextColor="White"
+                            CornerRadius="12" HeightRequest="80" Padding="0"/>
+                </Grid>
             </Grid>
-
         </Grid>
     </Grid>
 </ContentPage>
