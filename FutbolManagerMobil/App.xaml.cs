@@ -5,7 +5,7 @@
         public App()
         {
             InitializeComponent();
-
+            _ = Veritabani.JSONVerileriniYukleAsync();
             // Windows boyutlandırma kodun burada kalabilir
             Microsoft.Maui.Handlers.WindowHandler.Mapper.AppendToMapping(nameof(IWindow), (handler, view) =>
             {
