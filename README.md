@@ -1,38 +1,50 @@
-# Futbol Manager Mobile (.NET MAUI)
+# Futbol Manager Mobile (.NET MAUI) - V3
 
-Bu proje, klasik bir futbol menajerlik simülasyonunun modern yazılım mimarileri ve **.NET MAUI** framework'ü kullanılarak mobil platformlara (.NET 9) taşınmış ve modernize edilmiş sürümüdür. Proje, çapraz platform desteği ile hem Android hem de iOS üzerinde çalışabilen dinamik bir yapıya sahiptir.
+Bu proje, geleneksel futbol menajerlik simülasyonu mantığının, modern yazılım mimarileri ve **.NET 9 MAUI** framework'ü kullanılarak mobil platformlara taşınmış, veri odaklı ve modernize edilmiş sürümüdür. **V3 aşamasıyla** birlikte proje, statik bir yapıdan çıkarak Python tabanlı otomasyonla beslenen dinamik bir ekosisteme dönüşmüştür.
 
-## 📱 Proje Vizyonu
-WinForms sürümünde temelini attığım futbol motoru mantığını, bu sürümde modern UI/UX prensipleriyle birleştirerek mobil cihazlar için optimize ettim. Bu geçiş süreci, masaüstü mimarisinden modern mobil mimariye (cross-platform) adaptasyonu simgelemektedir.
+## 🚀 V3 Sürümü: Veri ve Mimari Devrimi
 
-## 🚀 Öne Çıkan Özellikler
+Projenin üçüncü büyük güncellemesiyle birlikte aşağıdaki devrimsel özellikler sisteme entegre edilmiştir:
 
-* **Çapraz Platform Desteği:** Tek bir C# kod tabanı ile hem Android hem de iOS cihazlarda tam performanslı çalışma.
-* **Canlı Radar Panel:** Maç simülasyonunu anlık olarak takip etmeyi sağlayan, mobil ekranlara özel optimize edilmiş grafiksel saha çizimi.
-* **Akıllı Yardımcı Antrenör:** Kondisyonu düşen veya sakatlanan oyuncuları analiz ederek otomatik değişiklik önerileri sunan yapay zeka destekli sistem.
-* **Dinamik Takım Yönetimi:** Gelişmiş kadro oluşturma, yedek oyuncu takibi ve maç içi taktiksel müdahaleler.
+### 📊 Dinamik JSON Veri Yönetimi
+Eski sürümlerde kod içerisinde statik olarak tutulan takım ve oyuncu verileri, tamamen merkezi bir **JSON** katmanına (`teams.json`) taşınmıştır. 
+- Uygulama başlatıldığında asenkron olarak yüklenen veriler, bellek optimizasyonu sağlayarak mobil cihazlarda yüksek performans sunar.
+- Veri ve mantık katmanı (Logic) birbirinden ayrılarak projenin genişletilebilirliği artırılmıştır.
 
-## 🛠️ Teknik Detaylar ve Mimari
+### 🐍 Python tabanlı "Scraping" Otomasyonu
+Veritabanı, Python ile geliştirilen özel bir veri kazıma (web scraping) scripti ile yönetilmektedir:
+- **Canlı Veri:** Transfermarkt üzerinden 2025/2026 sezonu projeksiyonlu güncel kadrolar otomatik olarak çekilir.
+- **Akıllı Mevki Eşleme (Fallback):** Takımların dizilişlerine göre eksik kalan mevkiler (örneğin 10 numara eksikliği), kanat veya forvet oyuncularının taktiksel olarak o bölgeye kaydırılmasıyla otomatik olarak doldurulur.
 
-* **Framework:** .NET 9.0 MAUI
-* **Dil:** C#
-* **Grafik Motoru:** Mobile Drawing (Canvas) API'leri ile geliştirilmiş radar görünümü.
-* **Performans:** Mobil işlemci mimarileri (ARM64) için optimize edilmiş yüksek hızlı maç motoru hesaplamaları.
+### 💰 "Ali Ceylan" Ekonomik Değer Algoritması
+Oyuncu reytingleri artık rastgele değil, piyasa değerine (Market Value) dayalı gerçekçi bir algoritma ile hesaplanmaktadır:
+- **1M€ Altı:** 60-70 Reyting
+- **1M€ - 5M€:** 71-75 Reyting
+- **5M€ - 20M€:** 75-80 Reyting
+- **20M€ - 50M€:** 80-85 Reyting
+- **50M€ - 100M€:** 85-90 Reyting
+- **100M€+:** 90-95 Reyting
+- **180M€+ (Prime):** Özel yeteneklerde 95-98 bandında elit performans.
 
-## 📦 Proje Yapısı
+## 🛠️ Teknik Yığın ve Mimari
 
-* **Models:** Oyuncu, Takım ve Maç verilerinin yapılandırıldığı katman.
-* **Views:** Modern ve kullanıcı dostu arayüzlerin (XAML) bulunduğu katman.
-* **Logic:** Maç motoru hesaplamaları ve asistan antrenör algoritmalarının merkezi.
+* **Frontend:** .NET 9.0 MAUI (C#)
+* **Veri Formatı:** JSON (System.Text.Json)
+* **Backend & Automation:** Python (BeautifulSoup / Requests)
+* **Grafik:** Canvas API tabanlı Canlı Radar Paneli
+* **Platformlar:** Android, iOS, Windows (ARM64 & x64)
+
+## ⚽ Kapsanan Takım Havuzu (36 Takım)
+
+Uygulama, dünya futbolunun en önemli takımlarını kapsamaktadır:
+- **Süper Lig:** Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor ve özel bir dokunuşla **Gümüşhanespor**.
+- **Avrupa Devleri:** Real Madrid, Barcelona, Man. City, PSG, Bayern München ve daha fazlası.
+- **Milli Takımlar:** Türkiye, Fransa, İngiltere, Brezilya, Arjantin gibi 2026 Dünya Kupası odaklı 14 büyük milli takım.
 
 ## ⚙️ Kurulum ve Yayına Hazırlık
 
 1.  Bu depoyu klonlayın.
-2.  Visual Studio 2022'de (v17.12+) projeyi açın.
-3.  `.NET MAUI` iş yükünün ve `.NET 9` SDK'sının yüklü olduğundan emin olun.
-4.  Cihazınızın geliştirici modunu açarak veya bir emülatör seçerek `Run` tuşuna basın.
-
-## 📈 Gelişim Süreci
-Bu uygulama, yazılım kariyerimdeki **WinForms'tan MAUI'ye Geçiş** yolculuğunun bir parçasıdır. Masaüstü uygulamalarındaki mantığı, modern mobil gereksinimlerle (dokunmatik ekran, farklı çözünürlükler ve platformlar arası uyum) harmanlamayı hedefledim.
-
----
+2.  `Resources/Raw/teams.json` dosyasının **Build Action** özelliğinin `MauiAsset` olduğundan emin olun.
+3.  Visual Studio 2022 (v17.12+) ile projeyi açın ve `.NET 9` SDK ile çalıştırın.
+4.  Kadroları güncellemek isterseniz `Python/teams.py` scriptini çalıştırarak yeni JSON dosyasını oluşturabilirsiniz.
+ 
